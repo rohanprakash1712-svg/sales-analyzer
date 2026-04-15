@@ -350,20 +350,62 @@ export default function SalesPipelineAnalyzer() {
 
   const downloadSampleCSV = () => {
     const sample = `Company,Deal Value,Stage,Last Activity Date,Owner,Days In Stage
-Acme Corp,50000,Negotiation,2026-04-10,Rohan,3
-Beta Ltd,30000,Proposal Sent,2026-04-05,Amit,10
-Gamma Inc,20000,Discovery,2026-03-30,Sneha,16
-Delta Co,80000,Negotiation,2026-04-13,Rohan,1
-Zeta Pvt,15000,Proposal Sent,2026-04-01,Amit,14
-Epsilon Tech,45000,Negotiation,2026-03-25,Rohan,21
-Theta Corp,60000,Discovery,2026-04-08,Sneha,7
-Iota Ltd,25000,Proposal Sent,2026-04-02,Amit,13`;
+Acme Corp,125000,Negotiation,2026-03-28,Rohan,18
+TechStart Inc,85000,Proposal Sent,2026-03-25,Amit,21
+GlobalTech Solutions,220000,Negotiation,2026-03-22,Rohan,25
+BlueSky Digital,45000,Discovery,2026-04-02,Sneha,13
+CloudNine Systems,95000,Proposal Sent,2026-04-08,Amit,7
+Enterprise Hub,180000,Negotiation,2026-04-10,Rohan,3
+DataFlow Analytics,65000,Discovery,2026-03-20,Sneha,26
+Innovation Labs,150000,Proposal Sent,2026-04-05,Amit,10
+Premium Services,55000,Discovery,2026-04-12,Sneha,3
+NextGen Corp,200000,Negotiation,2026-04-13,Rohan,1
+Swift Solutions,75000,Proposal Sent,2026-03-18,Amit,24
+Velocity Partners,110000,Discovery,2026-04-06,Sneha,9
+Quantum Leap,320000,Negotiation,2026-04-11,Rohan,2
+ProFlow Inc,45000,Proposal Sent,2026-03-30,Amit,15
+StreamBase Tech,190000,Discovery,2026-04-09,Sneha,6
+Horizon Systems,80000,Proposal Sent,2026-04-01,Amit,14
+Nexus Digital,135000,Negotiation,2026-04-12,Rohan,1
+Maven Solutions,55000,Discovery,2026-04-04,Sneha,11
+OptiMax Corp,165000,Proposal Sent,2026-03-29,Amit,16
+Catalyst Industries,275000,Negotiation,2026-04-14,Rohan,0
+Silver Lining,40000,Discovery,2026-04-10,Sneha,5
+ElevateAI,125000,Proposal Sent,2026-04-07,Amit,8
+Powerhouse Tech,95000,Negotiation,2026-03-31,Rohan,14
+Insight Partners,70000,Discovery,2026-03-15,Sneha,31
+FutureScale Inc,210000,Negotiation,2026-04-09,Rohan,6
+MetaVerse Corp,60000,Proposal Sent,2026-03-27,Amit,19
+ValueStream,85000,Discovery,2026-04-08,Sneha,7
+Pinnacle Solutions,175000,Negotiation,2026-04-11,Rohan,3
+FastTrack Systems,50000,Proposal Sent,2026-04-03,Amit,12
+Nexus Prime,240000,Discovery,2026-04-13,Sneha,1
+SynergyTech,105000,Negotiation,2026-04-01,Rohan,13
+CloudPeak Analytics,65000,Proposal Sent,2026-03-26,Amit,20
+Momentum Inc,145000,Discovery,2026-04-11,Sneha,3
+VisionaryAI,320000,Negotiation,2026-04-08,Rohan,6
+Apex Digital,90000,Proposal Sent,2026-04-12,Amit,3
+Zenith Partners,180000,Discovery,2026-04-09,Sneha,5
+Quantum Systems,70000,Negotiation,2026-03-19,Rohan,26
+Velocity Pro,115000,Proposal Sent,2026-03-24,Amit,22
+SolidState Corp,200000,Negotiation,2026-04-14,Rohan,0
+Innovate Hub,55000,Discovery,2026-04-05,Sneha,10
+Elite Partners,250000,Proposal Sent,2026-04-02,Amit,13
+Spectrum Tech,85000,Negotiation,2026-04-07,Rohan,7
+Ascend Digital,140000,Discovery,2026-04-10,Sneha,5
+Phoenix Solutions,95000,Proposal Sent,2026-04-06,Amit,9
+Orbital Systems,310000,Negotiation,2026-04-12,Rohan,2
+Cascade Technologies,65000,Discovery,2026-03-28,Sneha,18
+Summit Digital,175000,Proposal Sent,2026-04-04,Amit,11
+Nexus Crown,120000,Negotiation,2026-04-01,Rohan,13
+Vector Innovations,80000,Discovery,2026-04-11,Sneha,4
+Prism Partners,230000,Proposal Sent,2026-04-09,Amit,6`;
 
     const blob = new Blob([sample], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'sample_pipeline.csv';
+    a.download = 'sample_pipeline_demo.csv';
     a.click();
   };
 
