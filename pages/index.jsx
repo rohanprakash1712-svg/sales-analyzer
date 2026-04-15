@@ -169,7 +169,8 @@ export default function SalesPipelineAnalyzer() {
 
   // 5. STAGE PROGRESSION & BOTTLENECK ANALYSIS
   const analyzeStageProgression = (parsed) => {
-    const stages = ['Discovery', 'Proposal Sent', 'Negotiation', 'Closed Won'];
+    // Only analyze active stages, not closed deals
+    const stages = ['Discovery', 'Proposal Sent', 'Negotiation'];
     const stageAnalysis = {};
 
     stages.forEach(stage => {
@@ -233,8 +234,11 @@ export default function SalesPipelineAnalyzer() {
   const generateRecommendedActions = (parsed, ownerMetrics, stageProgression, revenueAtRisk) => {
     const actions = [];
 
+    // Only analyze active deals (exclude Closed Won/Lost)
+    const activeDeals = parsed.filter(d => d.stage !== 'Closed Won' && d.stage !== 'Closed Lost');
+
     // Rule 1: Critical urgency - Deals >14 days inactive with high value
-    const criticalDeals = parsed.filter(d => d.days > 14 && d.value > 30000 && d.stage !== 'Closed Won');
+    const criticalDeals = activeDeals.filter(d => d.days > 14 && d.value > 30000);
     criticalDeals.slice(0, 3).forEach(deal => {
       actions.push({
         priority: 'critical',
@@ -246,7 +250,7 @@ export default function SalesPipelineAnalyzer() {
     });
 
     // Rule 2: High-value deals at risk (7-14 days)
-    const highValueAtRisk = parsed.filter(d => d.days > 7 && d.days <= 14 && d.value > 50000).sort((a, b) => b.value - a.value);
+    const highValueAtRisk = activeDeals.filter(d => d.days > 7 && d.days <= 14 && d.value > 50000).sort((a, b) => b.value - a.value);
     highValueAtRisk.slice(0, 2).forEach(deal => {
       actions.push({
         priority: 'high',
@@ -315,7 +319,7 @@ export default function SalesPipelineAnalyzer() {
     }
 
     // Rule 7: Discovery deals - push to Proposal if >5 days
-    const stalledDiscovery = parsed.filter(d => d.stage === 'Discovery' && d.days > 5);
+    const stalledDiscovery = activeDeals.filter(d => d.stage === 'Discovery' && d.days > 5);
     if (stalledDiscovery.length > 0) {
       actions.push({
         priority: 'medium',
@@ -326,15 +330,15 @@ export default function SalesPipelineAnalyzer() {
       });
     }
 
-    // Rule 8: Win celebration / deal closing tracking
+    // Rule 8: Win celebration / deal closing tracking (for recently closed deals)
     const justClosed = parsed.filter(d => d.stage === 'Closed Won' && d.daysInStage <= 3);
     if (justClosed.length > 0) {
       actions.push({
         priority: 'info',
-        action: `Document wins: ${justClosed.map(d => d.company).join(', ')}`,
-        reason: `${justClosed.length} recently closed - capture learnings for future deals`,
-        impact: `Process improvement`,
-        owner: justClosed[0].owner
+        action: `Congratulations! ${justClosed.length} deals closed - Document wins`,
+        reason: `${justClosed.length} recently closed - capture learnings and celebrate team`,
+        impact: `Process improvement & morale`,
+        owner: 'Team'
       });
     }
 
@@ -350,56 +354,53 @@ export default function SalesPipelineAnalyzer() {
 
   const downloadSampleCSV = () => {
     const sample = `Company,Deal Value,Stage,Last Activity Date,Owner,Days In Stage
-Acme Corp,125000,Negotiation,2026-03-28,Rohan,18
-TechStart Inc,85000,Proposal Sent,2026-03-25,Amit,21
-GlobalTech Solutions,220000,Negotiation,2026-03-22,Rohan,25
-BlueSky Digital,45000,Discovery,2026-04-02,Sneha,13
-CloudNine Systems,95000,Proposal Sent,2026-04-08,Amit,7
-Enterprise Hub,180000,Negotiation,2026-04-10,Rohan,3
-DataFlow Analytics,65000,Discovery,2026-03-20,Sneha,26
-Innovation Labs,150000,Proposal Sent,2026-04-05,Amit,10
-Premium Services,55000,Discovery,2026-04-12,Sneha,3
-NextGen Corp,200000,Negotiation,2026-04-13,Rohan,1
-Swift Solutions,75000,Proposal Sent,2026-03-18,Amit,24
-Velocity Partners,110000,Discovery,2026-04-06,Sneha,9
+Catalyst Industries,275000,Closed Won,2026-04-14,Rohan,0
 Quantum Leap,320000,Negotiation,2026-04-11,Rohan,2
-ProFlow Inc,45000,Proposal Sent,2026-03-30,Amit,15
-StreamBase Tech,190000,Discovery,2026-04-09,Sneha,6
-Horizon Systems,80000,Proposal Sent,2026-04-01,Amit,14
-Nexus Digital,135000,Negotiation,2026-04-12,Rohan,1
-Maven Solutions,55000,Discovery,2026-04-04,Sneha,11
-OptiMax Corp,165000,Proposal Sent,2026-03-29,Amit,16
-Catalyst Industries,275000,Negotiation,2026-04-14,Rohan,0
-Silver Lining,40000,Discovery,2026-04-10,Sneha,5
-ElevateAI,125000,Proposal Sent,2026-04-07,Amit,8
-Powerhouse Tech,95000,Negotiation,2026-03-31,Rohan,14
-Insight Partners,70000,Discovery,2026-03-15,Sneha,31
-FutureScale Inc,210000,Negotiation,2026-04-09,Rohan,6
-MetaVerse Corp,60000,Proposal Sent,2026-03-27,Amit,19
-ValueStream,85000,Discovery,2026-04-08,Sneha,7
-Pinnacle Solutions,175000,Negotiation,2026-04-11,Rohan,3
-FastTrack Systems,50000,Proposal Sent,2026-04-03,Amit,12
-Nexus Prime,240000,Discovery,2026-04-13,Sneha,1
-SynergyTech,105000,Negotiation,2026-04-01,Rohan,13
-CloudPeak Analytics,65000,Proposal Sent,2026-03-26,Amit,20
-Momentum Inc,145000,Discovery,2026-04-11,Sneha,3
-VisionaryAI,320000,Negotiation,2026-04-08,Rohan,6
-Apex Digital,90000,Proposal Sent,2026-04-12,Amit,3
-Zenith Partners,180000,Discovery,2026-04-09,Sneha,5
-Quantum Systems,70000,Negotiation,2026-03-19,Rohan,26
-Velocity Pro,115000,Proposal Sent,2026-03-24,Amit,22
+NextGen Corp,200000,Negotiation,2026-04-13,Rohan,1
 SolidState Corp,200000,Negotiation,2026-04-14,Rohan,0
-Innovate Hub,55000,Discovery,2026-04-05,Sneha,10
-Elite Partners,250000,Proposal Sent,2026-04-02,Amit,13
-Spectrum Tech,85000,Negotiation,2026-04-07,Rohan,7
-Ascend Digital,140000,Discovery,2026-04-10,Sneha,5
-Phoenix Solutions,95000,Proposal Sent,2026-04-06,Amit,9
 Orbital Systems,310000,Negotiation,2026-04-12,Rohan,2
-Cascade Technologies,65000,Discovery,2026-03-28,Sneha,18
-Summit Digital,175000,Proposal Sent,2026-04-04,Amit,11
+Enterprise Hub,180000,Negotiation,2026-04-10,Rohan,3
+VisionaryAI,320000,Negotiation,2026-04-08,Rohan,6
+FutureScale Inc,210000,Negotiation,2026-04-09,Rohan,6
+Pinnacle Solutions,175000,Negotiation,2026-04-11,Rohan,3
+Spectrum Tech,85000,Negotiation,2026-04-07,Rohan,7
+Summit Digital,175000,Closed Won,2026-04-04,Rohan,11
+Nexus Digital,135000,Closed Won,2026-04-12,Rohan,1
+GlobalTech Solutions,220000,Closed Won,2026-03-22,Rohan,25
 Nexus Crown,120000,Negotiation,2026-04-01,Rohan,13
+SynergyTech,105000,Negotiation,2026-04-01,Rohan,13
+TechStart Inc,85000,Proposal Sent,2026-03-15,Amit,27
+Swift Solutions,75000,Proposal Sent,2026-03-12,Amit,34
+OptiMax Corp,165000,Proposal Sent,2026-03-19,Amit,27
+ProFlow Inc,45000,Proposal Sent,2026-03-20,Amit,26
+CloudPeak Analytics,65000,Proposal Sent,2026-03-16,Amit,31
+Velocity Pro,115000,Proposal Sent,2026-03-14,Amit,32
+MetaVerse Corp,60000,Proposal Sent,2026-03-17,Amit,29
+Elite Partners,250000,Proposal Sent,2026-03-22,Amit,24
+Horizon Systems,80000,Proposal Sent,2026-03-21,Amit,25
+FastTrack Systems,50000,Proposal Sent,2026-03-23,Amit,23
+Innovation Labs,150000,Proposal Sent,2026-03-25,Amit,21
+CloudNine Systems,95000,Proposal Sent,2026-03-28,Amit,18
+ElevateAI,125000,Proposal Sent,2026-03-27,Amit,19
+Apex Digital,90000,Proposal Sent,2026-04-02,Amit,13
+Prism Partners,230000,Proposal Sent,2026-03-29,Amit,17
+Phoenix Solutions,95000,Proposal Sent,2026-03-26,Amit,20
+DataFlow Analytics,65000,Discovery,2026-04-08,Sneha,7
+Insight Partners,70000,Closed Won,2026-04-11,Sneha,3
+Cascade Technologies,65000,Discovery,2026-04-06,Sneha,9
+BlueSky Digital,45000,Discovery,2026-04-10,Sneha,5
+Maven Solutions,55000,Closed Won,2026-04-09,Sneha,6
+Premium Services,55000,Discovery,2026-04-12,Sneha,3
+Velocity Partners,110000,Discovery,2026-04-07,Sneha,8
+StreamBase Tech,190000,Negotiation,2026-04-09,Sneha,6
+ValueStream,85000,Discovery,2026-04-08,Sneha,7
+Silver Lining,40000,Discovery,2026-04-10,Sneha,5
+Zenith Partners,180000,Negotiation,2026-04-09,Sneha,6
+Momentum Inc,145000,Discovery,2026-04-11,Sneha,4
+Ascend Digital,140000,Discovery,2026-04-10,Sneha,5
 Vector Innovations,80000,Discovery,2026-04-11,Sneha,4
-Prism Partners,230000,Proposal Sent,2026-04-09,Amit,6`;
+Innovate Hub,55000,Discovery,2026-04-05,Sneha,10
+Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
 
     const blob = new Blob([sample], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
