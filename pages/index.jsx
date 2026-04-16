@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function SalesPipelineAnalyzer() {
   const [csvData, setCsvData] = useState(null);
@@ -8,6 +9,7 @@ export default function SalesPipelineAnalyzer() {
   const [fileName, setFileName] = useState('');
   const [aiSummary, setAiSummary] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const formatCurrency = (num) => {
     return new Intl.NumberFormat('en-IN', {
@@ -410,17 +412,46 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
     a.click();
   };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const processFile = (file) => {
+    if (!file || !file.name.endsWith('.csv')) {
+      setError('Please upload a CSV file');
+      return;
+    }
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       setCsvData(e.target.result);
       setReport(null);
       setError(null);
+      setIsDragOver(false);
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      processFile(files[0]);
+    }
   };
 
   const getWhy = (d) => {
@@ -787,24 +818,31 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
               alignItems: 'center',
               justifyContent: 'center',
               padding: '16px 20px',
-              background: '#f9fafb',
-              border: '2px dashed #d1d5db',
+              background: isDragOver ? '#e0f2fe' : '#f9fafb',
+              border: `2px dashed ${isDragOver ? '#0284c7' : '#d1d5db'}`,
               borderRadius: '12px',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151'
+              color: isDragOver ? '#0284c7' : '#374151'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f3f4f6';
-              e.currentTarget.style.borderColor = '#9ca3af';
+              if (!isDragOver) {
+                e.currentTarget.style.background = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#9ca3af';
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f9fafb';
-              e.currentTarget.style.borderColor = '#d1d5db';
-            }}>
-              📁 {fileName ? `Selected: ${fileName}` : 'Upload CSV'}
+              if (!isDragOver) {
+                e.currentTarget.style.background = '#f9fafb';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }
+            }}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}>
+              📁 {isDragOver ? 'Drop CSV here' : fileName ? `Selected: ${fileName}` : 'Upload CSV or Drag & Drop'}
               <input type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 
@@ -945,6 +983,92 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
                   <div style={{ fontSize: '11px', color: '#082f49', marginTop: '4px' }}>3-7 days</div>
                 </div>
               </div>
+            </div>
+
+            {/* Analytics Charts */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+
+              {/* Stagewise Pipeline Count */}
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: '0 0 16px 0',
+                  color: '#111827'
+                }}>
+                  📊 Deals by Stage
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={Object.values(report.stageProgression).filter(s => s.dealCount > 0)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="stage" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value) => value} contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+                    <Bar dataKey="dealCount" fill="#3b82f6" name="Deal Count" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Stagewise Revenue */}
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: '0 0 16px 0',
+                  color: '#111827'
+                }}>
+                  💵 Revenue by Stage
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={Object.values(report.stageProgression).filter(s => s.totalValue > 0).map(s => ({
+                    ...s,
+                    totalValue: s.totalValue / 100000
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="stage" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                    <YAxis tick={{ fontSize: 12 }} label={{ value: '₹ Crores', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip formatter={(value) => `₹${(value).toFixed(1)}L`} contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+                    <Bar dataKey="totalValue" fill="#10b981" name="Revenue" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Owner Pipeline Distribution */}
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: '0 0 16px 0',
+                  color: '#111827'
+                }}>
+                  👥 Pipeline by Sales Rep
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={report.ownerMetrics} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" tick={{ fontSize: 12 }} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
+                    <Tooltip formatter={(value) => value} contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+                    <Bar dataKey="dealCount" fill="#f59e0b" name="Deals" radius={[0, 8, 8, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
             </div>
 
             {/* Stats Grid */}
