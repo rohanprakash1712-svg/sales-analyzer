@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function SalesPipelineAnalyzer() {
   const [csvData, setCsvData] = useState(null);
@@ -606,6 +605,101 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
     setLoading(false);
   };
 
+  // Chart Components
+  const SimpleBarChart = ({ data, label, valueKey, barColor = '#3b82f6' }) => {
+    if (!data || data.length === 0) return null;
+
+    const maxValue = Math.max(...data.map(d => d[valueKey]));
+    const chartWidth = 400;
+    const chartHeight = 250;
+    const barWidth = chartWidth / (data.length * 1.5);
+    const padding = 40;
+
+    return (
+      <svg width={chartWidth} height={chartHeight} style={{ overflow: 'visible' }}>
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((tick, i) => (
+          <line
+            key={`grid-${i}`}
+            x1={padding}
+            y1={chartHeight - padding - (tick * (chartHeight - padding * 2))}
+            x2={chartWidth - 10}
+            y2={chartHeight - padding - (tick * (chartHeight - padding * 2))}
+            stroke="#e5e7eb"
+            strokeDasharray="4"
+          />
+        ))}
+
+        {/* Bars */}
+        {data.map((item, idx) => {
+          const barHeight = (item[valueKey] / maxValue) * (chartHeight - padding * 2);
+          const x = padding + (idx * (chartWidth - padding) / data.length) + barWidth / 2;
+          const y = chartHeight - padding - barHeight;
+
+          return (
+            <g key={`bar-${idx}`}>
+              <rect x={x} y={y} width={barWidth} height={barHeight} fill={barColor} rx={4} />
+              <text
+                x={x + barWidth / 2}
+                y={chartHeight - padding + 20}
+                textAnchor="middle"
+                fontSize="12"
+                fill="#6b7280"
+              >
+                {item.stage || item.name}
+              </text>
+              <text
+                x={x + barWidth / 2}
+                y={y - 5}
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="600"
+                fill="#111827"
+              >
+                {item[valueKey]}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Axes */}
+        <line x1={padding} y1={chartHeight - padding} x2={chartWidth} y2={chartHeight - padding} stroke="#d1d5db" strokeWidth="2" />
+        <line x1={padding} y1={padding} x2={padding} y2={chartHeight - padding} stroke="#d1d5db" strokeWidth="2" />
+      </svg>
+    );
+  };
+
+  const HorizontalBarChart = ({ data, label, valueKey, barColor = '#f59e0b' }) => {
+    if (!data || data.length === 0) return null;
+
+    const maxValue = Math.max(...data.map(d => d[valueKey]));
+    const chartWidth = 400;
+    const chartHeight = 200;
+    const barHeight = chartHeight / data.length;
+    const padding = 100;
+
+    return (
+      <svg width={chartWidth} height={chartHeight} style={{ overflow: 'visible' }}>
+        {data.map((item, idx) => {
+          const barWidth = (item[valueKey] / maxValue) * (chartWidth - padding);
+          const y = idx * barHeight + barHeight / 2;
+
+          return (
+            <g key={`hbar-${idx}`}>
+              <rect x={padding} y={y - barHeight / 3} width={barWidth} height={barHeight * 0.6} fill={barColor} rx={4} />
+              <text x={5} y={y + 5} fontSize="12" fill="#111827" fontWeight="500">
+                {item.name}
+              </text>
+              <text x={padding + barWidth + 5} y={y + 5} fontSize="11" fontWeight="600" fill="#374151">
+                {item[valueKey]}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  };
+
   const RiskCard = ({ company, days, value, why, variant = 'default', dealScore, winProb }) => {
     const getBgColor = () => {
       if (variant === 'critical') return '#fee2e2';
@@ -986,7 +1080,7 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
             </div>
 
             {/* Analytics Charts */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
 
               {/* Stagewise Pipeline Count */}
               <div style={{
@@ -1003,15 +1097,13 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
                 }}>
                   📊 Deals by Stage
                 </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={Object.values(report.stageProgression).filter(s => s.dealCount > 0)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="stage" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value) => value} contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                    <Bar dataKey="dealCount" fill="#3b82f6" name="Deal Count" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflowX: 'auto' }}>
+                  <SimpleBarChart
+                    data={Object.values(report.stageProgression).filter(s => s.dealCount > 0)}
+                    valueKey="dealCount"
+                    barColor="#3b82f6"
+                  />
+                </div>
               </div>
 
               {/* Stagewise Revenue */}
@@ -1027,20 +1119,18 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
                   margin: '0 0 16px 0',
                   color: '#111827'
                 }}>
-                  💵 Revenue by Stage
+                  💵 Revenue by Stage (₹L)
                 </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={Object.values(report.stageProgression).filter(s => s.totalValue > 0).map(s => ({
-                    ...s,
-                    totalValue: s.totalValue / 100000
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="stage" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                    <YAxis tick={{ fontSize: 12 }} label={{ value: '₹ Crores', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value) => `₹${(value).toFixed(1)}L`} contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                    <Bar dataKey="totalValue" fill="#10b981" name="Revenue" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflowX: 'auto' }}>
+                  <SimpleBarChart
+                    data={Object.values(report.stageProgression).filter(s => s.totalValue > 0).map(s => ({
+                      ...s,
+                      totalValue: Math.round(s.totalValue / 100000)
+                    }))}
+                    valueKey="totalValue"
+                    barColor="#10b981"
+                  />
+                </div>
               </div>
 
               {/* Owner Pipeline Distribution */}
@@ -1058,15 +1148,13 @@ Nexus Prime,240000,Negotiation,2026-04-13,Sneha,2`;
                 }}>
                   👥 Pipeline by Sales Rep
                 </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={report.ownerMetrics} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis type="number" tick={{ fontSize: 12 }} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
-                    <Tooltip formatter={(value) => value} contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                    <Bar dataKey="dealCount" fill="#f59e0b" name="Deals" radius={[0, 8, 8, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflowX: 'auto' }}>
+                  <HorizontalBarChart
+                    data={report.ownerMetrics}
+                    valueKey="dealCount"
+                    barColor="#f59e0b"
+                  />
+                </div>
               </div>
 
             </div>
